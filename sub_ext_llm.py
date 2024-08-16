@@ -51,21 +51,21 @@ def get_subtitles_in_range(transcript, timestamp, range_seconds=2):
 
     return ' '.join(relevant_subtitles)
 
-def analyze_with_openai(full_transcript, timestamp_transcript):
+def analyze_with_openai(full_transcript, timestamp_transcript, question):
     """Analyze the transcripts using OpenAI's API."""
     try:
         response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": "You are an AI assistant that analyzes video transcripts."},
-                {"role": "user", "content": f"Here's the full transcript of a video:\n\n{full_transcript}\n\nAnd here's a specific part of the transcript:\n\n{timestamp_transcript}\n\nPlease analyze what this specific part means in the context of the entire video. Provide a concise summary and any relevant insights."}
+                {"role": "system", "content": "You are an AI assistant that analyzes video transcripts and helps users understand certain lines/dialogues or words from the transcript."},
+                {"role": "user", "content": f"Here's the full transcript of a video:\n<full_transcript>\n{full_transcript}</full_transcript>\n\nAnd here's a specific part of the transcript:\n\n{timestamp_transcript}\n\nPlease analyze what this specific part means in the context of the entire video. Provide a concise summary or relevant insights based on the user's question\n<question>{question}</question>"}
             ]
         )
         return response.choices[0].message.content
     except Exception as e:
         return f"Error in OpenAI API call: {str(e)}"
 
-def analyze_youtube_transcript(url, time_str):
+def analyze_youtube_transcript(url, time_str, question):
     """Main function to analyze YouTube transcript."""
     video_id = extract_video_id(url)
     if not video_id:
@@ -77,7 +77,7 @@ def analyze_youtube_transcript(url, time_str):
         transcript_data = YouTubeTranscriptApi.get_transcript(video_id)
         timestamp_transcript = get_subtitles_in_range(transcript_data, timestamp)
         
-        analysis = analyze_with_openai(full_transcript, timestamp_transcript)
+        analysis = analyze_with_openai(full_transcript, timestamp_transcript, question)
         return analysis
     except Exception as e:
         return f"Error: {str(e)}"
@@ -88,5 +88,6 @@ def analyze_youtube_transcript(url, time_str):
 
 url = input("\nEnter the youtube video url:")
 time_str = input("\nEnter the timestamp in the video in the format mm:ss or m:ss : ")
-result = analyze_youtube_transcript(url, time_str)
+query = input("\nEnter Your query: ")
+result = analyze_youtube_transcript(url, time_str, question=query)
 print(f"Analysis for timestamp {time_str}:\n{result}")
